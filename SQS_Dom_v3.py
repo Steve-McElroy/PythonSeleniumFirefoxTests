@@ -2,30 +2,31 @@
 
 '''
 Assumptions made;
-1 - Colours and fonts do not change
-    blue 
-2 - Edit / delete buttons are not functional other than updating the URL
-3 - For the three coloured buttons (blue, red, green), the text displayed will only
+1 - Colours of buttons do not change
+2 - For the three coloured buttons (blue, red, green), the text displayed will only
     ever be "bar", "baz", "foo", "qux"
-4 - 
+3 - The font used for the buttons is always inherited from the HTML
+3 - Edit / delete buttons are not functional other than updating the URL
+4 - The table of values (lorem, ipsum etc.) does not change and can be treated as static
 '''
 
 import unittest, os, pyautogui, time
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 
-# Geckodriver on my local machine
-geckodriver = r'H:\Program Files\geckodriver-v0.24.0-win64\geckodriver.exe'
+# Geckodriver required for running FF
+geckodriver = 'geckodriver.exe'
 
 # URL of required site
 url = 'https://the-internet.herokuapp.com/challenging_dom'
 
 class ChallengingDom(unittest.TestCase):
 
-
+	# Initialise required driver 
     def setUp(self):
         self.driver = webdriver.Firefox(executable_path = geckodriver)
 
+    # Load URL and verify the title is as expected
     def test_01_Title(self):
         print('\n Running Test 1: Title')
         driver = self.driver
@@ -37,6 +38,7 @@ class ChallengingDom(unittest.TestCase):
         else:
             print('Test 1 failed')
 
+    # Load URL and verify the header is as expected
     def test_02_Header(self):
         print('\n Running Test 2: Header')
         driver = self.driver
@@ -54,15 +56,30 @@ class ChallengingDom(unittest.TestCase):
         print('\n Running Test 3: Blue Button Text')
         driver = self.driver
         driver.get(url)
+        choices = {'bar' : 0, 'baz' : 0, 'foo' : 0, 'qux' : 0}
         i = 0
         while i < 5:
             blueButton = driver.find_element_by_class_name('button')
             blueButtonText = blueButton.get_attribute('innerHTML')
             assert(blueButtonText in ('bar','foo','baz', 'qux'))
+            if blueButtonText == 'bar':
+            	choices['bar'] = 1
+            elif blueButtonText == 'baz':
+            	choices['baz'] = 1
+            elif blueButtonText == 'foo':
+            	choices['foo'] = 1
+            else:
+            	choices['qux'] = 1
             i += 1
+            choicesCovered = all(value == 1 for value in choices.values())
+            if choicesCovered == True:
+            	print('All possible values seen')
+            else:
+            	print('Still checking button text...')
             print('Text verified %d times And this time the button said %s.' % (i, blueButtonText))
             blueButton.click()
 
+    # Locate the blue button and verify the background colour remains consistent
     def test_04_Blue_Button_BackgroundColour(self):
         print('\n Running Test 4: Background Colour')
         driver = self.driver
@@ -182,12 +199,12 @@ class ChallengingDom(unittest.TestCase):
         
     def test_11_Main_Table(self):
         print('\n Running Test 11: Verify Table Is Present')
-        os.chdir('X:\My Documents\Coding\Python_Scripts\Automate the Boring Stuff (Udemy Course)')
-        tableReferenceImage = 'table_options.PNG'
+        #os.chdir('X:\My Documents\Coding\Python_Scripts\Automate the Boring Stuff (Udemy Course)')
+        tableReferenceImage = 'table_options_2.PNG'
         driver = self.driver
         driver.get(url)
         print('Waiting while image recognition is run...')
-        time.sleep(15)
+        time.sleep(5)
         tableCheck = pyautogui.onScreen(tableReferenceImage)
         if tableCheck == True:
             print('Image Found')
@@ -201,7 +218,22 @@ class ChallengingDom(unittest.TestCase):
         driver = self.driver
         driver.get(url)
         externalUrl = driver.find_element_by_css_selector('.large-4 > div:nth-child(2) > a:nth-child(1)')
-        
+        externalUrl.click()
+        driver.switch_to.window(driver.window_handles[-1])
+        currentUrl = driver.current_url
+        assert(currentUrl == 'http://elementalselenium.com/')
+
+
+    def test_13_GitHub_Link(self):
+        print('\n Running Test 13: Verify GitHub Url Is Functional')
+        driver = self.driver
+        driver.get(url)
+        gitHubLink = driver.find_element_by_css_selector('body > div:nth-child(2) > a:nth-child(1) > img:nth-child(1)')
+        gitHubLink.click()
+        driver.switch_to.window(driver.window_handles[-1])
+        currentUrl = driver.current_url
+        assert(currentUrl == 'https://github.com/tourdedave/the-internet')
+
 
     # Close browser after each test
     def tearDown(self):
@@ -209,3 +241,4 @@ class ChallengingDom(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
